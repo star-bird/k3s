@@ -1,0 +1,167 @@
+---
+# vim: filetype=ansible.yaml
+# The singleton is any already running k3s controlplane node.  Mostly we
+# just need to have the correct node token to use on any other control
+# plane node, because we initialize everything on the first one and then
+# all other control plane nodes will join on the running node for the
+# initial setup.
+#
+# Otherwise they won't be able to communicate and you'd have three
+# isolated control planes, not a single HA control plane.
+
+- name: Create /etc/rancher/k3s/ directory
+  ansible.builtin.file:
+    path: /etc/rancher/k3s/
+    state: directory
+    mode: '0755'
+
+- name: Create /var/lib/rancher/k3s/ directory
+  ansible.builtin.file:
+    path: /var/lib/rancher/k3s/
+    state: directory
+    mode: '0755'
+
+- name: Create /var/lib/rancher/k3s/server/manifests restricted directory
+  ansible.builtin.file:
+    path: /var/lib/rancher/k3s/
+    state: directory
+    mode: '0700'
+
+- name: Place kube-vip manifest file on server
+  ansible.builtin.template:
+    src: "kube-vip.j2"
+    dest: /var/lib/rancher/k3s/server/manifests/kube-vip.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  when: kube_vip_enabled is truthy
+
+- name: Copy Jinja template
+  ansible.builtin.template:
+    src: "singleton.config.yaml.j2"
+    dest: /etc/rancher/k3s/config.yaml
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Copy K3s service file
+  register: k3s_service
+  ansible.builtin.template:
+    src: "k3s.service.j2"
+    dest: "{{ systemd_dir }}/k3s.service"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable and check K3s service
+  any_errors_fatal: true
+  ansible.builtin.systemd:
+    name: k3s
+    daemon_reload: true
+    state: restarted
+    enabled: true
+
+# - name: Wait for node-token
+#   ansible.builtin.wait_for:
+#     path: "{{ k3s_server_location }}/server/node-token"
+
+# - name: Register node-token file access mode
+#   ansible.builtin.stat:
+#     path: "{{ k3s_server_location }}/server/node-token"
+#   register: p
+
+# - name: Change file access node-token
+#   ansible.builtin.file:
+#     path: "{{ k3s_server_location }}/server/node-token"
+#     mode: "g+rx,o+rx"
+
+# - name: Read node-token from master
+#   ansible.builtin.slurp:
+#     path: "{{ k3s_server_location }}/server/node-token"
+#   register: node_token
+
+- name: Update node facts after k3s adds tailscale
+  ansible.builtin.setup:
+    filter: 'ansible_tailscale0'
+
+- name: Store Control Plane IP address when not using kube-vip
+  ansible.builtin.set_fact:
+    k3s_controlplane_ip: "{{ hostvars[inventory_hostname].ansible_tailscale0.ipv4.address }}"
+  delegate_to: "{{ k3s_item }}"
+  delegate_facts: true
+  loop: "{{ groups[cluster_name] }}"
+  loop_control:
+    loop_var: k3s_item
+  when: kube_vip_enabled is not truthy
+
+- name: Store kube-vip virtual IP address when using kube-vip
+  ansible.builtin.set_fact:
+    k3s_controlplane_ip: "{{ kube_vip_address }}"
+  delegate_to: "{{ k3s_item }}"
+  delegate_facts: true
+  loop: "{{ groups[cluster_name] }}"
+  loop_control:
+    loop_var: k3s_item
+  when: kube_vip_enabled is truthy
+
+- name: Create directory .kube
+  ansible.builtin.file:
+    path: ~{{ ansible_user }}/.kube
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: "u=rwx,g=rx,o="
+
+- name: Copy config file to user home directory
+  ansible.builtin.copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: ~{{ ansible_user }}/.kube/config
+    remote_src: true
+    owner: "{{ ansible_user }}"
+    mode: "u=rw,g=,o="
+
+- name: Replace https://localhost:6443 by https://master-ip:6443
+  ansible.builtin.command: >-
+    k3s kubectl config set-cluster default
+      --server=https://{{ k3s_controlplane_ip }}:6443
+      --kubeconfig ~{{ ansible_user }}/.kube/config
+  changed_when: true
+
+- name: Create kubectl symlink
+  ansible.builtin.file:
+    src: /usr/local/bin/k3s
+    dest: /usr/local/bin/kubectl
+    state: link
+
+- name: Create crictl symlink
+  ansible.builtin.file:
+    src: /usr/local/bin/k3s
+    dest: /usr/local/bin/crictl
+    state: link
+
+- name: Create ArgoCD NameSpace
+  become: false
+  kubernetes.core.k8s:
+    name: argocd
+    kind: Namespace
+    state: present
+
+# Download and install ArgoCD
+- name: Download argoCD install manifest to the cluster.
+  become: false
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/argoproj/argo-cd/v{{ argocd_version }}/manifests/install.yaml
+    dest: ~/argocd-install.yaml
+    mode: '0664'
+
+- name: Apply argoCD install manifest to the cluster.
+  become: false
+  kubernetes.core.k8s:
+    state: present
+    src: ~/argocd-install.yaml
+    namespace: argocd
+
+- name: Remove kube-vip manifest file on server
+  ansible.builtin.file:
+    state: absent
+    path: /var/lib/rancher/k3s/server/manifests/kube-vip.yaml
+  when: kube_vip_enabled is truthy

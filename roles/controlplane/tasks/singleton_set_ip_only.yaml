@@ -1,0 +1,62 @@
+---
+# vim: filetype=ansible.yaml
+# The singleton is any already running k3s controlplane node.  Mostly we
+# just need to have the correct node token to use on any other control
+# plane node, because we initialize everything on the first one and then
+# all other control plane nodes will join on the running node for the
+# initial setup.
+#
+# Otherwise they won't be able to communicate and you'd have three
+# isolated control planes, not a single HA control plane.
+
+
+# Need these steps if updating as well
+- name: Place kube-vip manifest file on server
+  ansible.builtin.template:
+    src: "kube-vip.j2"
+    dest: /var/lib/rancher/k3s/server/manifests/kube-vip.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  when: kube_vip_enabled is truthy
+
+- name: Store Control Plane IP address when not using kube-vip
+  ansible.builtin.set_fact:
+    k3s_controlplane_ip: "{{ hostvars[inventory_hostname].ansible_tailscale0.ipv4.address }}"
+  delegate_to: "{{ k3s_item }}"
+  delegate_facts: true
+  loop: "{{ groups[cluster_name] }}"
+  loop_control:
+    loop_var: k3s_item
+  when: kube_vip_enabled is not truthy
+
+- name: Store kube-vip virtual IP address when using kube-vip
+  ansible.builtin.set_fact:
+    k3s_controlplane_ip: "{{ kube_vip_address }}"
+  delegate_to: "{{ k3s_item }}"
+  delegate_facts: true
+  loop: "{{ groups[cluster_name] }}"
+  loop_control:
+    loop_var: k3s_item
+  when: kube_vip_enabled is truthy
+
+# Download and install ArgoCD
+- name: Download argoCD install manifest to the cluster.
+  become: false
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/argoproj/argo-cd/v{{ argocd_version }}/manifests/install.yaml
+    dest: ~/argocd-install.yaml
+    mode: '0664'
+
+- name: Apply argoCD install manifest to the cluster.
+  become: false
+  kubernetes.core.k8s:
+    state: present
+    src: ~/argocd-install.yaml
+    namespace: argocd
+
+- name: Remove kube-vip manifest file on server
+  ansible.builtin.file:
+    state: absent
+    path: /var/lib/rancher/k3s/server/manifests/kube-vip.yaml
+  when: kube_vip_enabled is truthy

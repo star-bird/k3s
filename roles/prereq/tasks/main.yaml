@@ -1,0 +1,50 @@
+---
+# vim: filetype=ansible.yaml
+- name: Enable IPv4 forwarding
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: true
+
+- name: Enable IPv6 forwarding
+  ansible.builtin.sysctl:
+    name: net.ipv6.conf.all.forwarding
+    value: "1"
+    state: present
+    reload: true
+  when: ansible_all_ipv6_addresses | length > 0
+
+# https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes
+- name: Enable set wmem for QUIC
+  ansible.builtin.sysctl:
+    name: net.core.wmem_max
+    value: "7500000"
+    state: present
+    reload: true
+
+- name: Enable set rmem for QUIC
+  ansible.builtin.sysctl:
+    name: net.core.rmem_max
+    value: "7500000"
+    state: present
+    reload: true
+
+- name: Download k3s binary x64
+  ansible.builtin.get_url:
+    url: https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s
+    checksum: sha256:https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-amd64.txt
+    dest: /usr/local/bin/k3s
+    owner: root
+    group: root
+    mode: '0755'
+  when: ansible_facts.architecture == "x86_64"
+
+- name: Ensure interfaces DHCP
+  become: true
+  ansible.builtin.copy:
+    src: dhcp_all_network_interfaces
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: '0644'
