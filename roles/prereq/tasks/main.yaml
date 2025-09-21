@@ -48,3 +48,30 @@
     owner: root
     group: root
     mode: '0644'
+
+- name: Install Tailscale gpg key for Trixie
+  become: true
+  ansible.builtin.copy:
+    src: trixie.noarmor.gpg
+    dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install Tailscale keyring for Trixie
+  become: true
+  ansible.builtin.copy:
+    src: trixie.tailscale-keyring.list
+    dest: /etc/apt/sources.list.d/tailscale.list
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install tailscale package
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    autoclean: true
+    pkg:
+      - tailscale
+    state: latest
