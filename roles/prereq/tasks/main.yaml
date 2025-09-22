@@ -40,6 +40,36 @@
     mode: '0755'
   when: ansible_facts.architecture == "x86_64"
 
+- name: Create kubectl symlink
+  ansible.builtin.file:
+    src: /usr/local/bin/k3s
+    dest: /usr/local/bin/kubectl
+    state: link
+
+- name: Create crictl symlink
+  ansible.builtin.file:
+    src: /usr/local/bin/k3s
+    dest: /usr/local/bin/crictl
+    state: link
+
+- name: Create /etc/rancher/k3s/ directory
+  ansible.builtin.file:
+    path: /etc/rancher/k3s/
+    state: directory
+    mode: '0700'
+
+- name: Create /var/lib/rancher/k3s/ directory
+  ansible.builtin.file:
+    path: /var/lib/rancher/k3s/
+    state: directory
+    mode: '0755'
+
+- name: Create /var/lib/rancher/k3s/server/manifests restricted directory
+  ansible.builtin.file:
+    path: /var/lib/rancher/k3s/
+    state: directory
+    mode: '0700'
+
 - name: Ensure interfaces DHCP
   become: true
   ansible.builtin.copy:
@@ -58,10 +88,10 @@
     group: root
     mode: '0644'
 
-- name: Install Tailscale keyring for Trixie
+- name: Install Tailscale sources.list for Trixie
   become: true
   ansible.builtin.copy:
-    src: trixie.tailscale-keyring.list
+    src: tailscale.trixie.sources.list
     dest: /etc/apt/sources.list.d/tailscale.list
     owner: root
     group: root

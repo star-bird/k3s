@@ -1,5 +1,0 @@
----
-# vim: filetype=ansible.yaml
-- name: K3S cluster
-  ansible.builtin.import_tasks: cluster.yaml
-  become: true

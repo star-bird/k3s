@@ -9,23 +9,6 @@
 # Otherwise they won't be able to communicate and you'd have three
 # isolated control planes, not a single HA control plane.
 
-- name: Create /etc/rancher/k3s/ directory
-  ansible.builtin.file:
-    path: /etc/rancher/k3s/
-    state: directory
-    mode: '0755'
-
-- name: Create /var/lib/rancher/k3s/ directory
-  ansible.builtin.file:
-    path: /var/lib/rancher/k3s/
-    state: directory
-    mode: '0755'
-
-- name: Create /var/lib/rancher/k3s/server/manifests restricted directory
-  ansible.builtin.file:
-    path: /var/lib/rancher/k3s/
-    state: directory
-    mode: '0700'
 
 - name: Place kube-vip manifest file on server
   ansible.builtin.template:
@@ -61,25 +44,6 @@
     state: restarted
     enabled: true
 
-# - name: Wait for node-token
-#   ansible.builtin.wait_for:
-#     path: "{{ k3s_server_location }}/server/node-token"
-
-# - name: Register node-token file access mode
-#   ansible.builtin.stat:
-#     path: "{{ k3s_server_location }}/server/node-token"
-#   register: p
-
-# - name: Change file access node-token
-#   ansible.builtin.file:
-#     path: "{{ k3s_server_location }}/server/node-token"
-#     mode: "g+rx,o+rx"
-
-# - name: Read node-token from master
-#   ansible.builtin.slurp:
-#     path: "{{ k3s_server_location }}/server/node-token"
-#   register: node_token
-
 - name: Update node facts after k3s adds tailscale
   ansible.builtin.setup:
     filter: 'ansible_tailscale0'
@@ -109,7 +73,7 @@
     path: ~{{ ansible_user }}/.kube
     state: directory
     owner: "{{ ansible_user }}"
-    mode: "u=rwx,g=rx,o="
+    mode: '0750'
 
 - name: Copy config file to user home directory
   ansible.builtin.copy:
@@ -117,26 +81,14 @@
     dest: ~{{ ansible_user }}/.kube/config
     remote_src: true
     owner: "{{ ansible_user }}"
-    mode: "u=rw,g=,o="
+    mode: '0600'
 
-- name: Replace https://localhost:6443 by https://master-ip:6443
+- name: Replace https://localhost:6443 by https://controlplane-ip:6443
   ansible.builtin.command: >-
     k3s kubectl config set-cluster default
       --server=https://{{ k3s_controlplane_ip }}:6443
       --kubeconfig ~{{ ansible_user }}/.kube/config
   changed_when: true
-
-- name: Create kubectl symlink
-  ansible.builtin.file:
-    src: /usr/local/bin/k3s
-    dest: /usr/local/bin/kubectl
-    state: link
-
-- name: Create crictl symlink
-  ansible.builtin.file:
-    src: /usr/local/bin/k3s
-    dest: /usr/local/bin/crictl
-    state: link
 
 - name: Create ArgoCD NameSpace
   become: false

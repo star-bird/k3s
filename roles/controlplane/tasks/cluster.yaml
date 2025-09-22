@@ -1,6 +1,6 @@
 ---
 # vim: filetype=ansible.yaml
-# NON-SINGLETON cluster - 2nd and after HA masters.
+# NON-SINGLETON cluster - 2nd and after HA control plane nodes.
 
 # The singleton is any already running k3s controlplane node.  Mostly we
 # just need to have the correct node token to use on any other control
@@ -10,12 +10,6 @@
 #
 # Otherwise they won't be able to communicate and you'd have three
 # isolated control planes, not a single HA control plane.
-
-- name: Create /etc/rancher/k3s/ directory
-  ansible.builtin.file:
-    path: /etc/rancher/k3s/
-    state: directory
-    mode: '0700'
 
 - name: Copy Jinja template
   ansible.builtin.template:

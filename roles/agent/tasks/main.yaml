@@ -1,21 +1,15 @@
 ---
 # vim: filetype=ansible.yaml
-# NON-SINGLETON cluster - 2nd and after HA masters.
+# NON-SINGLETON cluster - 2nd and after HA control plane nodes.
 
 # The singleton is any already running k3s controlplane node.  Mostly we
 # just need to have the correct node token to use on any other control
-# plane or worker node, because we initialize everything on the first
+# plane or agent node, because we initialize everything on the first
 # one and then all other control plane nodes will join on the running
 # node for the initial setup.
 #
 # Otherwise they won't be able to communicate and you'd have three
 # isolated control planes, not a single HA control plane.
-
-- name: Create /etc/rancher/k3s/ directory
-  ansible.builtin.file:
-    path: /etc/rancher/k3s/
-    state: directory
-    mode: '0700'
 
 - name: Copy Jinja template
   ansible.builtin.template:
@@ -24,8 +18,6 @@
     owner: root
     group: root
     mode: '0600'
-  vars:
-    k3s_server_type: server
 
 - name: Copy K3s service file
   register: k3s_service
