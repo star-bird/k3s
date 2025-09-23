@@ -11,13 +11,11 @@
   ansible.builtin.stat:
     path: /var/lib/rancher/k3s/server/node-token
   run_once: true
-  become: true
   register: node_token_file
 
 - name: Run singleton tasks (This will also upgrade cluster ArgoCD/kube-vip)
   ansible.builtin.import_tasks: singleton.yaml
   run_once: true
-  become: true
 
   # If we just created the node token, then we need to shuf it into bitwarden.
   # If we didn't just create it, then it shouldn't have changed.
@@ -28,12 +26,4 @@
 
 - name: Run cluster tasks
   ansible.builtin.import_tasks: cluster.yaml
-  become: true
   when: inventory_hostname != groups[hostvars[inventory_hostname].group_names[0]][0]
-
-- name: Download and install ArgoCD CLI
-  become: true
-  ansible.builtin.get_url:
-    url: https://github.com/argoproj/argo-cd/releases/download/v{{ argocd_version }}/argocd-linux-amd64
-    dest: /usr/local/bin/argocd
-    mode: '0555'

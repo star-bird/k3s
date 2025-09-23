@@ -71,7 +71,6 @@
     mode: '0700'
 
 - name: Ensure interfaces DHCP
-  become: true
   ansible.builtin.copy:
     src: dhcp_all_network_interfaces
     dest: /etc/network/interfaces
@@ -80,7 +79,6 @@
     mode: '0644'
 
 - name: Install Tailscale gpg key for Trixie
-  become: true
   ansible.builtin.copy:
     src: trixie.noarmor.gpg
     dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
@@ -89,7 +87,6 @@
     mode: '0644'
 
 - name: Install Tailscale sources.list for Trixie
-  become: true
   ansible.builtin.copy:
     src: tailscale.trixie.sources.list
     dest: /etc/apt/sources.list.d/tailscale.list
@@ -98,7 +95,6 @@
     mode: '0644'
 
 - name: Install tailscale package
-  become: true
   ansible.builtin.apt:
     update_cache: true
     autoclean: true
