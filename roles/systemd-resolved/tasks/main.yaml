@@ -1,0 +1,59 @@
+---
+# vim: filetype=ansible.yaml
+- name: Ensure required packages are installed which require a reboot
+  become: true
+  register: common_critical_packages
+  ansible.builtin.apt:
+    pkg:
+      - systemd-resolved
+    state: latest
+
+- name: Create dhclient enter hooks dir if not existant
+  become: true
+  ansible.builtin.file:
+    path: /etc/dhcp/dhclient-enter-hooks.d/
+    state: directory
+    mode: '0755'
+
+- name: Remove dhclient's ability to overwrite systemd-resolved's /etc/resolv.conf
+  become: true
+  register: common_critical_dhclient
+  ansible.builtin.copy:
+    dest: /etc/dhcp/dhclient-enter-hooks.d/no-resolv-conf
+    content: |
+      #!/bin/sh
+      make_resolv_conf() { :; };
+    mode: '0755'
+    owner: root
+    group: root
+
+# Resolved-networkd has no fallback dns by default, and dhclient isn't reliable about giving it the network DNS.
+- name: Create resolved config file (Fallback DNS)
+  become: true
+  register: common_critical_config
+  ansible.builtin.copy:
+    src: resolved.conf
+    dest: /etc/systemd/resolved.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+# Ansible version of ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+- name: Ensure symlink for resolv.conf
+  become: true
+  register: common_critical_symlink
+  ansible.builtin.file:
+    src: /run/systemd/resolve/resolv.conf
+    dest: /etc/resolv.conf
+    state: link
+    force: true
+
+# This is not a handler, because we need to reboot immediately. There's a
+# chance a host can fail offline here if we catch a DHCP refresh cycle
+# wrong, so we need to kick it immediately.
+- name: Forced immediate reboot
+  become: true
+  throttle: 1
+  when: common_critical_packages.changed or common_critical_dhclient.changed or common_critical_symlink.changed or common_critical_config.changed
+  ansible.builtin.reboot:
+    reboot_timeout: 600
