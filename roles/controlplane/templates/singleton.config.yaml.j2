@@ -1,0 +1,4 @@
+cluster-init: true
+vpn-auth: name=tailscale,joinKey={{ tailscale_authkey | mandatory(msg='TS_KEY must be defined in the env.')}}
+cluster-cidr: {{ cluster_cidr }}
+service-cidr: {{ service_cidr }}
