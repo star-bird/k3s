@@ -58,17 +58,25 @@
     state: directory
     mode: '0700'
 
-- name: Create /var/lib/rancher/k3s/ directory
+- name: Create /var/lib/rancher/k3s/agent/etc/ directory
   ansible.builtin.file:
-    path: /var/lib/rancher/k3s/
+    path: /var/lib/rancher/k3s/agent/etc
     state: directory
     mode: '0755'
 
-- name: Create /var/lib/rancher/k3s/server/manifests restricted directory
+- name: Create /var/lib/rancher/k3s/agent/etc/kubelet.conf.d restricted directory
   ansible.builtin.file:
-    path: /var/lib/rancher/k3s/
+    path: /var/lib/rancher/k3s/agent/etc/kubelet.conf.d
     state: directory
     mode: '0700'
+
+- name: Install kubelet config file for graceful shutdown
+  ansible.builtin.copy:
+    src: 10-k3s-graceful-shutdown.conf
+    dest: /var/lib/rancher/k3s/agent/etc/kubelet.conf.d/10-k3s-graceful-shutdown.conf
+    owner: root
+    group: root
+    mode: '0600'
 
 - name: Ensure interfaces DHCP
   ansible.builtin.copy:
