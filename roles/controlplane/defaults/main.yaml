@@ -1,9 +1,8 @@
 ---
 # vim: filetype=ansible.yaml
-k3s_server_location: /var/lib/rancher/k3s
-tailscale_authkey: "{{ lookup('ansible.builtin.env', 'TS_KEY', default=Undefined) }}"
-cluster_cidr: 10.42.0.0/16
-service_cidr: 10.43.0.0/16
-extra_server_args: ""
-cluster_name: k8scluster
-bitwarden_node_key_secret_name: wg-k8s-test
+k3s_tailscale_authkey: "{{ lookup('ansible.builtin.env', 'TS_KEY', default=Undefined) }}"
+controlplane_cluster_cidr: 10.42.0.0/16
+controlplane_service_cidr: 10.43.0.0/16
+controlplane_extra_server_args: ""
+controlplane_cluster_name: k8scluster
+controlplane_token_secret_name: wg-k8s-test

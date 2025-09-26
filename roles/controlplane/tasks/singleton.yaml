@@ -9,7 +9,6 @@
 # Otherwise they won't be able to communicate and you'd have three
 # isolated control planes, not a single HA control plane.
 
-
 - name: Copy Jinja template
   ansible.builtin.template:
     src: "singleton.config.yaml.j2"
@@ -38,15 +37,11 @@
   ansible.builtin.setup:
     filter: 'ansible_tailscale0'
 
-- name: Display all variables/facts known for a host
-  ansible.builtin.debug:
-    var: hostvars[inventory_hostname].ansible_tailscale0
-
 - name: Store controlplane IP address
   ansible.builtin.set_fact:
-    controlplane_ip: "{{ hostvars[inventory_hostname].ansible_tailscale0.ipv4.address }}"
+    controlplane_ip: "{{ controlplane_api_ip | default(hostvars[inventory_hostname].ansible_tailscale0.ipv4.address) }}"
   delegate_to: "{{ controlplane_item }}"
   delegate_facts: true
-  loop: "{{ groups[cluster_name] }}"
+  loop: "{{ groups[controlplane_cluster_name] }}"
   loop_control:
     loop_var: controlplane_item

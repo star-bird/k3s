@@ -1,5 +1,4 @@
 ---
-k3s_server_location: /var/lib/rancher/k3s
-tailscale_authkey: "{{ lookup('ansible.builtin.env', 'TS_KEY', default=Undefined) }}"
-extra_agent_args: ""
-bitwarden_node_key_secret_name: wg-k8s-test
+k3s_tailscale_authkey: "{{ lookup('ansible.builtin.env', 'TS_KEY', default=Undefined) }}"
+agent_extra_args: ""
+agent_token_secret_name: wg-k8s-test
