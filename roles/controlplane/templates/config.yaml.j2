@@ -1,5 +1,5 @@
 cluster-init: true
-token: {{ lookup('community.general.bitwarden', controlplane_token_secret_name, field='password', collection_name='test') }}
+token: {{ lookup('community.general.bitwarden', controlplane_token_secret_name, field='password') }}
 server: https://{{ controlplane_ip }}:6443
 vpn-auth: name=tailscale,joinKey={{ k3s_tailscale_authkey | mandatory(msg='TS_KEY must be defined in the env.')}}
 cluster-cidr: {{ controlplane_cluster_cidr }}
