@@ -1,0 +1,21 @@
+---
+# vim: filetype=ansible.yaml
+# - hosts: all
+#   roles:
+#     - common_critical
+#     - common
+
+- hosts: k8scluster
+  become: true
+  roles:
+    - prereq
+
+- hosts: k8scontrolplane
+  become: true
+  roles:
+    - controlplane
+
+- hosts: k8sagents
+  become: true
+  roles:
+    - agent

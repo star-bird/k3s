@@ -1,0 +1,29 @@
+---
+# vim: filetype=ansible.yaml
+
+# If the node-token does not exist, the singleton is being set up for the first
+# time - a brand new k3s installation. In this case, the node_token can't be
+# generated before the certificate for the cluster Certificate Authority exists
+# and can be hashed - if k3s is automatically generating the CA Certificate (as
+# in this collection), then we cannot know the node_token before k3s
+# installation has happened.
+- name: Check singleton for node-token
+  ansible.builtin.stat:
+    path: /var/lib/rancher/k3s/server/node-token
+  run_once: true
+  register: node_token_file
+
+- name: Run singleton tasks (This will also upgrade cluster ArgoCD/kube-vip)
+  ansible.builtin.import_tasks: singleton.yaml
+  run_once: true
+
+  # If we just created the node token, then we need to shuf it into bitwarden.
+  # If we didn't just create it, then it shouldn't have changed.
+- name: Please update bitwarden node-token entry
+  ansible.builtin.pause:
+    prompt: "Update node-token entry and run 'bw sync'"
+  when: not node_token_file.stat.exists
+
+- name: Run cluster tasks
+  ansible.builtin.import_tasks: cluster.yaml
+  when: inventory_hostname != groups[hostvars[inventory_hostname].group_names[0]][0]
