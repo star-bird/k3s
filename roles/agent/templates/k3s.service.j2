@@ -7,7 +7,7 @@ After=network-online.target
 Type=notify
 ExecStartPre=-/sbin/modprobe br_netfilter
 ExecStartPre=-/sbin/modprobe overlay
-ExecStart=/usr/local/bin/k3s agent --data-dir {{ k3s_server_location }} {{ extra_agent_args }} --config /etc/rancher/k3s/config.yaml
+ExecStart=/usr/local/bin/k3s agent --data-dir /var/lib/rancher/k3s {{ agent_extra_args }} --config /etc/rancher/k3s/config.yaml
 
 KillMode=process
 Delegate=yes
