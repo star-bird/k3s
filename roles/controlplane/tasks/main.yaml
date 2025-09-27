@@ -19,7 +19,7 @@
 
   # If we just created the node token, then we need to shuf it into bitwarden.
   # If we didn't just create it, then it shouldn't have changed.
-- name: Please update bitwarden node-token entry
+- name: Please update bitwarden controlplane node-token entry
   ansible.builtin.pause:
     prompt: "Update node-token entry and run 'bw sync'"
   when: not node_token_file.stat.exists
