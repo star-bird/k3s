@@ -13,7 +13,7 @@
   run_once: true
   register: node_token_file
 
-- name: Run singleton tasks (This will also upgrade cluster ArgoCD/kube-vip)
+- name: Run singleton tasks
   ansible.builtin.import_tasks: singleton.yaml
   run_once: true
 
