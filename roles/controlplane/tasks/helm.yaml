@@ -1,0 +1,19 @@
+---
+# vim: filetype=ansible.yaml
+- name: Add Helm apt repository
+  ansible.builtin.deb822_repository:
+    name: helm-stable-debian
+    uris: https://packages.buildkite.com/helm-linux/helm-debian/any/
+    suites: any
+    components: [main]
+    architectures: [amd64]
+    signed_by: https://packages.buildkite.com/helm-linux/helm-debian/gpgkey
+
+- name: Install required packages
+  ansible.builtin.apt:
+    update_cache: true
+    autoclean: true
+    pkg:
+      - python3-yaml
+      - helm
+    state: latest
