@@ -17,6 +17,11 @@
   ansible.builtin.import_tasks: singleton.yaml
   run_once: true
 
+- name: Run tailscale operator tasks
+  ansible.builtin.import_tasks: tailscale_operator.yaml
+  become: true
+  when: tailscale_operator_enabled | default(false)
+
   # If we just created the node token, then we need to shuf it into bitwarden.
   # If we didn't just create it, then it shouldn't have changed.
 - name: Please update bitwarden controlplane node-token entry
