@@ -45,3 +45,8 @@
   loop: "{{ groups[controlplane_cluster_name] }}"
   loop_control:
     loop_var: controlplane_item
+
+- name: Run tailscale operator tasks
+  ansible.builtin.import_tasks: tailscale_operator.yaml
+  become: true
+  when: tailscale_operator_enabled | default(false)
