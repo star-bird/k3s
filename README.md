@@ -210,6 +210,12 @@ You will need to approve the routes in the tailscale admin console, and you will
 controlplane_extra_server_args: "--tls-san 10.45.78.177"
 ```
 
+Once that is done, you will need to update the configurations to point at the ClusterIP instead of the default tailscale IP of the first controlplane node, and run the playbook a third time:
+
+```
+controlplane_api_ip: 10.45.78.177
+```
+
 Note: You cannot know the ClusterIP ahead of time. You will need to stand the cluster up, then create the custom resources, then modify controlplane_extra_server_args and then continue. Alternatively, you could set up a custom domain name on your network, stand up the cluster with tls-san set, and assign the IP address to the A record after the ClusterIP is known.
 
 
