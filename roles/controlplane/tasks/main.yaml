@@ -16,6 +16,7 @@
 - name: Run singleton tasks
   ansible.builtin.import_tasks: singleton.yaml
   run_once: true
+  become: true
 
   # If we just created the node token, then we need to shuf it into bitwarden.
   # If we didn't just create it, then it shouldn't have changed.
