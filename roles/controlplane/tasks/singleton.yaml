@@ -49,4 +49,4 @@
 - name: Run tailscale operator tasks
   ansible.builtin.import_tasks: tailscale_operator.yaml
   become: true
-  when: tailscale_operator_enabled | default(false)
+  when: controlplane_tailscale_operator_enabled | default(false)
