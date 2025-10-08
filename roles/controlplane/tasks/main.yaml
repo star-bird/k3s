@@ -10,7 +10,7 @@
 
 - name: Ensure prereqs are correct
   ansible.builtin.import_role:
-    name: prereqs
+    name: prereq
   become: true
 
 - name: Check singleton for node-token

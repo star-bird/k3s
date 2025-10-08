@@ -24,6 +24,8 @@ Don't use this if it's not appropriate for your environment.
 
 Expects to be run across the entire cluster. It's responsible for meeting all of the pre-reqs, such as downloading the k3s binary, setting some systemctl things to forward/route traffic, etc.
 
+You do not need to call this role from your own playbook. It's automatically pulled in by other roles as needed.
+
 #### Variables
 
 ##### prereq_k3s_version

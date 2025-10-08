@@ -1,3 +1,4 @@
 **/tags
 **/.ansible/
 hosts
+star_bird-k3s*.tar.gz
