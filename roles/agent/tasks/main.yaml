@@ -11,6 +11,11 @@
 # Otherwise they won't be able to communicate and you'd have three
 # isolated control planes, not a single HA control plane.
 
+- name: Ensure prereqs are correct
+  ansible.builtin.import_role:
+    name: prereqs
+  become: true
+
 - name: Copy Jinja template
   ansible.builtin.template:
     src: "config.yaml.j2"

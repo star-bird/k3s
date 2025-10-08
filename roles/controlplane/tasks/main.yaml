@@ -2,16 +2,22 @@
 # vim: filetype=ansible.yaml
 
 # If the node-token does not exist, the singleton is being set up for the first
-# time - a brand new k3s installation. In this case, the node_token can't be
+# time - a brand new k3s installation. In this case, the controlplane_node_token can't be
 # generated before the certificate for the cluster Certificate Authority exists
 # and can be hashed - if k3s is automatically generating the CA Certificate (as
-# in this collection), then we cannot know the node_token before k3s
+# in this collection), then we cannot know the controlplane_node_token before k3s
 # installation has happened.
+
+- name: Ensure prereqs are correct
+  ansible.builtin.import_role:
+    name: prereqs
+  become: true
+
 - name: Check singleton for node-token
   ansible.builtin.stat:
     path: /var/lib/rancher/k3s/server/node-token
   run_once: true
-  register: node_token_file
+  register: controlplane_node_token_file
 
 - name: Run singleton tasks
   ansible.builtin.import_tasks: singleton.yaml
@@ -23,7 +29,7 @@
 - name: Please update bitwarden controlplane node-token entry
   ansible.builtin.pause:
     prompt: "Update node-token entry and run 'bw sync'"
-  when: not node_token_file.stat.exists
+  when: not controlplane_node_token_file.stat.exists
 
 - name: Run cluster tasks
   ansible.builtin.import_tasks: cluster.yaml
