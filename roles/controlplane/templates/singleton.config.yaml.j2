@@ -1,4 +1,4 @@
 cluster-init: true
-vpn-auth: name=tailscale,joinKey={{ k3s_tailscale_authkey | mandatory(msg='TS_KEY must be defined in the env.')}}
+vpn-auth: name=tailscale,joinKey={{ k3s_tailscale_authkey | mandatory(msg='TS_KEY must be defined in the env.')}},extraArgs=--accept-routes
 cluster-cidr: {{ controlplane_cluster_cidr }}
 service-cidr: {{ controlplane_service_cidr }}
