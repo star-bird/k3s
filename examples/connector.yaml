@@ -1,0 +1,11 @@
+---
+apiVersion: tailscale.com/v1alpha1
+kind: Connector
+metadata:
+  name: ts-kubeapi
+spec:
+  replicas: 2
+  hostnamePrefix: ts-kubeapi
+  subnetRouter:
+    advertiseRoutes:
+      - "10.45.188.39/32"

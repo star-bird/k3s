@@ -49,7 +49,7 @@
 - name: Run tailscale operator tasks
   ansible.builtin.import_tasks: tailscale_operator.yaml
   become: true
-  when: controlplane_tailscale_operator_enabled
+  when: controlplane_tailscale_enabled
 
 - name: Run ArgoCD tasks
   ansible.builtin.import_tasks: argocd.yaml

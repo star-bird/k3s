@@ -19,6 +19,10 @@
   run_once: true
   register: controlplane_node_token_file
 
+- name: Harden the things we can before creating the cluster
+  ansible.builtin.import_tasks: harden.yaml
+  become: true
+
 - name: Run singleton tasks
   ansible.builtin.import_tasks: singleton.yaml
   run_once: true

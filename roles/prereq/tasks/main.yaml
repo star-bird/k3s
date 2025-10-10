@@ -1,14 +1,14 @@
 ---
 # vim: filetype=ansible.yaml
 - name: Enable IPv4 forwarding
-  ansible.builtin.sysctl:
+  ansible.posix.sysctl:
     name: net.ipv4.ip_forward
     value: "1"
     state: present
     reload: true
 
 - name: Enable IPv6 forwarding
-  ansible.builtin.sysctl:
+  ansible.posix.sysctl:
     name: net.ipv6.conf.all.forwarding
     value: "1"
     state: present
@@ -17,14 +17,14 @@
 
 # https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes
 - name: Enable set wmem for QUIC
-  ansible.builtin.sysctl:
+  ansible.posix.sysctl:
     name: net.core.wmem_max
     value: "7500000"
     state: present
     reload: true
 
 - name: Enable set rmem for QUIC
-  ansible.builtin.sysctl:
+  ansible.posix.sysctl:
     name: net.core.rmem_max
     value: "7500000"
     state: present
@@ -58,11 +58,29 @@
     state: directory
     mode: '0700'
 
+- name: Create /var/lib/rancher/k3s/server/logs directory
+  ansible.builtin.file:
+    path: /var/lib/rancher/k3s/server/logs
+    state: directory
+    mode: '0700'
+
+- name: Create /var/lib/rancher/k3s/server/manifests directory
+  ansible.builtin.file:
+    path: /var/lib/rancher/k3s/server/manifests
+    state: directory
+    mode: '0700'
+
 - name: Create /var/lib/rancher/k3s/agent/etc/ directory
   ansible.builtin.file:
     path: /var/lib/rancher/k3s/agent/etc
     state: directory
     mode: '0755'
+
+- name: Create /var/lib/rancher/k3s/server/ directory
+  ansible.builtin.file:
+    path: /var/lib/rancher/k3s/server
+    state: directory
+    mode: '0700'
 
 - name: Create /var/lib/rancher/k3s/agent/etc/kubelet.conf.d restricted directory
   ansible.builtin.file:
@@ -102,10 +120,51 @@
     group: root
     mode: '0644'
 
-- name: Install tailscale package
+- name: Install required packages
   ansible.builtin.apt:
     update_cache: true
     autoclean: true
     pkg:
       - tailscale
+      - python3-kubernetes
     state: latest
+
+- name: CIS hardening - disable panic_on_oom
+  ansible.posix.sysctl:
+    name: vm.panic_on_oom
+    value: "0"
+    sysctl_file: /etc/sysctl.d/90-kubelet.conf
+    state: present
+    reload: true
+
+- name: CIS hardening - enable memory overcommit
+  ansible.posix.sysctl:
+    name: vm.overcommit_memory
+    value: "1"
+    sysctl_file: /etc/sysctl.d/90-kubelet.conf
+    state: present
+    reload: true
+
+- name: CIS hardening - enable reboot on panic
+  ansible.posix.sysctl:
+    name: kernel.panic
+    value: "10"
+    sysctl_file: /etc/sysctl.d/90-kubelet.conf
+    state: present
+    reload: true
+
+- name: CIS hardening - Enable panic on oops
+  ansible.posix.sysctl:
+    name: kernel.panic_on_oops
+    value: "1"
+    sysctl_file: /etc/sysctl.d/90-kubelet.conf
+    state: present
+    reload: true
+
+- name: CIS hardening - Install kubelet config file to protect kernel defaults
+  ansible.builtin.copy:
+    src: 20-k3s-protect-kernel-defaults.conf
+    dest: /var/lib/rancher/k3s/agent/etc/kubelet.conf.d/20-k3s-protect-kernel-defaults.conf
+    owner: root
+    group: root
+    mode: '0600'

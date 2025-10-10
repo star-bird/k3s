@@ -4,6 +4,46 @@
   ansible.builtin.import_tasks: helm.yaml
   become: true
 
+- name: Create HAProxy namespace
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: haproxy
+        labels:
+          name: haproxy
+          pod-security.kubernetes.io/audit: baseline
+          pod-security.kubernetes.io/enforce: baseline
+          pod-security.kubernetes.io/warn: baseline
+
+- name: Apply default Network Policies for haproxy namespace
+  ansible.builtin.template:
+    src: "netpols.yaml.j2"
+    dest: /var/lib/rancher/k3s/server/manifests/haproxy-netpols.yaml
+    owner: root
+    group: root
+    mode: '0600'
+  vars:
+    namespace: haproxy
+
+- name: Create HAProxy namespace
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: haproxy
+        labels:
+          name: haproxy
+          pod-security.kubernetes.io/audit: baseline
+          pod-security.kubernetes.io/enforce: baseline
+          pod-security.kubernetes.io/warn: baseline
+
 - name: Install HAProxy Operator
   kubernetes.core.helm:
     name: haproxy-operator
@@ -11,7 +51,7 @@
     chart_repo_url: https://six-group.github.io/haproxy-operator
     chart_version: "{{ controlplane_haproxy_chart_version }}"
     namespace: haproxy
-    create_namespace: true
+    create_namespace: false
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     # use values from var or {}
     values: "{{ controlplane_haproxy_values }}"
