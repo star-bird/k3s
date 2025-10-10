@@ -1,0 +1,140 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: haproxy-kubeapi
+  labels:
+    name: haproxy-kubeapi
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: intra-namespace
+  namespace: haproxy-kubeapi
+spec:
+  podSelector: {}
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: haproxy-kubeapi
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-network-dns-policy
+  namespace: haproxy-kubeapi
+spec:
+  ingress:
+  - ports:
+    - port: 53
+      protocol: TCP
+    - port: 53
+      protocol: UDP
+  podSelector:
+    matchLabels:
+      k8s-app: kube-dns
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kubeapi-access
+  namespace: haproxy-kubeapi
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchExpressions:
+              - key: name
+                operator: In
+                values:
+                  - tailscale
+          podSelector:
+            matchExpressions:
+              - key: tailscale.com/parent-resource
+                operator: In
+                values:
+                  - ts-kubeapi
+      ports:
+        - port: 6443
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - port: 6443
+---
+apiVersion: proxy.haproxy.com/v1alpha1
+kind: Instance
+metadata:
+  name: example
+  namespace: haproxy-kubeapi
+spec:
+  replicas: 2
+  configuration:
+    defaults: {}
+    global: {}
+    selector:
+      matchLabels:
+        proxy.haproxy.com/instance: example
+  network:
+    service:
+      enabled: true
+---
+apiVersion: config.haproxy.com/v1alpha1
+kind: Frontend
+metadata:
+  name: example
+  namespace: haproxy-kubeapi
+  labels:
+    proxy.haproxy.com/instance: example
+spec:
+  mode: tcp
+  binds:
+    - name: hello-world
+      port: 6443
+  defaultBackend:
+    name: example-be
+---
+apiVersion: config.haproxy.com/v1alpha1
+kind: Backend
+metadata:
+  name: example-be
+  namespace: haproxy-kubeapi
+  labels:
+    proxy.haproxy.com/instance: example
+spec:
+  acl:
+    - criterion: src
+      name: whitelist
+      values:
+        - 100.64.0.0/10
+  mode: tcp
+  redispatch: true
+  balance:
+    algorithm: roundrobin
+  servers:
+    - address: wg-k8s-01
+      name: wg-k8s-01
+      port: 6443
+      check:
+        enabled: true
+    - address: wg-k8s-02
+      name: wg-k8s-02
+      port: 6443
+      check:
+        enabled: true
+    - address: wg-k8s-03
+      name: wg-k8s-03
+      port: 6443
+      check:
+        enabled: true

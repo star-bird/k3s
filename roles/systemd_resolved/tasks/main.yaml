@@ -51,9 +51,14 @@
 # This is not a handler, because we need to reboot immediately. There's a
 # chance a host can fail offline here if we catch a DHCP refresh cycle
 # wrong, so we need to kick it immediately.
+
 - name: Forced immediate reboot
   become: true
   throttle: 1
   when: common_critical_packages.changed or common_critical_dhclient.changed or common_critical_symlink.changed or common_critical_config.changed
   ansible.builtin.reboot:
     reboot_timeout: 600
+
+# - name: Force reboot, don't wait for return
+#   ansible.builtin.command:
+#     cmd: /sbin/reboot

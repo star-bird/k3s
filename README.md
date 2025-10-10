@@ -170,41 +170,7 @@ NOTE: This enables a simple TCP check, as recommended in the k3s documentation. 
 
 In order to just expose this using tailscale operator (i.e. expose it as a machine with an open port), just add the appropriate annotation to the Instance (see below). Please note, there will only be a single instance connecting to the tailnet to provide this access, so it's still a SPOF. We recommend using redundant subnet routers instead.
 
-```
-apiVersion: proxy.haproxy.com/v1alpha1
-kind: Instance
-metadata:
-  name: example
-  namespace: default
-spec:
-  replicas: 2
-  configuration:
-    defaults: {}
-    global: {}
-    selector:
-      matchLabels:
-        proxy.haproxy.com/instance: example
-  network:
-    service:
-      enabled: true
-      annotations:
-        "tailscale.com/expose": "true"
-```
-
-In order to expose via a subnet route, simply create a tailscale Connection:
-
-```
-apiVersion: tailscale.com/v1alpha1
-kind: Connector
-metadata:
-  name: ts-kubeapi
-spec:
-  replicas: 1
-  hostnamePrefix: ts-kubeapi
-  subnetRouter:
-    advertiseRoutes:
-      - "10.45.78.177/32"
-```
+You can find examples of how to configure this in the examples/ subdirectory, haproxy.yaml shows how to set up the haproxy, and connector.yaml gives an example for tailscale.
 
 You will need to approve the routes in the tailscale admin console, and you will need to configure the tls-san for the kubernetes cluster controlplane nodes, so you will need to set the following ansible variable for your control plane:
 

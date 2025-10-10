@@ -4,13 +4,38 @@
   ansible.builtin.import_tasks: helm.yaml
   become: true
 
+- name: Create ArgoCD namespace
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: argocd
+        labels:
+          name: argocd
+          pod-security.kubernetes.io/audit: baseline
+          pod-security.kubernetes.io/enforce: baseline
+          pod-security.kubernetes.io/warn: baseline
+
+- name: Apply default Network Policies for argocd namespace
+  ansible.builtin.template:
+    src: "netpols.yaml.j2"
+    dest: /var/lib/rancher/k3s/server/manifests/agrocd-netpols.yaml
+    owner: root
+    group: root
+    mode: '0600'
+  vars:
+    namespace: argocd
+
 - name: Install ArgoCD with helm
   kubernetes.core.helm:
     name: argo-cd
     chart_ref: argo-cd
     chart_repo_url: https://argoproj.github.io/argo-helm
     namespace: argocd
-    create_namespace: true
+    create_namespace: false
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     # use values from var or {}
     values: "{{ controlplane_argocd_values }}"
@@ -18,7 +43,7 @@
     wait: true
     wait_timeout: "5m"
     chart_version: "{{ controlplane_argocd_chart_version }}"
-  register: argocd_helm
-  until: argocd_helm is succeeded
+  register: controlplane_argocd_helm
+  until: controlplane_argocd_helm is succeeded
   retries: 3
   delay: 10

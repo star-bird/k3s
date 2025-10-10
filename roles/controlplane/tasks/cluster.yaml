@@ -35,3 +35,15 @@
     daemon_reload: true
     state: restarted
     enabled: true
+
+- name: Get list of certs
+  ansible.builtin.find:
+    paths: /var/lib/rancher/k3s/server/tls
+    patterns: "*.crt"
+  register: controlplane_k3s_certs
+
+- name: Chmod 0600 /var/lib/rancher/k3s/server/tls/*.crt
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    mode: '0600'
+  with_items: "{{ controlplane_k3s_certs.files }}"
