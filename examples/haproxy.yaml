@@ -121,7 +121,7 @@ spec:
   mode: tcp
   redispatch: true
   balance:
-    algorithm: roundrobin
+    algorithm: source
   servers:
     - address: wg-k8s-01
       name: wg-k8s-01

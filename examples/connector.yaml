@@ -8,4 +8,4 @@ spec:
   hostnamePrefix: ts-kubeapi
   subnetRouter:
     advertiseRoutes:
-      - "10.45.188.39/32"
+      - "10.45.8.26/32"
