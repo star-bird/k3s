@@ -55,8 +55,3 @@
   ansible.builtin.import_tasks: argocd.yaml
   become: true
   when: controlplane_argocd_enabled
-
-- name: Run HAProxy tasks
-  ansible.builtin.import_tasks: haproxy.yaml
-  become: true
-  when: controlplane_haproxy_enabled

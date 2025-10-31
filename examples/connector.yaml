@@ -1,11 +1,32 @@
 ---
 apiVersion: tailscale.com/v1alpha1
+kind: ProxyClass
+metadata:
+  name: kubeapi-proxyclass
+spec:
+  tailscale:
+    acceptRoutes: true
+  statefulSet:
+    pod:
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: "true"
+      tailscaleContainer: {}
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 128Mi
+        #   limits:
+        #     memory: 512Mi
+---
+apiVersion: tailscale.com/v1alpha1
 kind: Connector
 metadata:
   name: ts-kubeapi
 spec:
-  replicas: 2
+  replicas: 3 # Set this to however many controlplane nodes you have
   hostnamePrefix: ts-kubeapi
   subnetRouter:
     advertiseRoutes:
       - "10.45.8.26/32"
+      - "10.45.33.161/32"
+  proxyClass: kubeapi-proxyclass

@@ -82,9 +82,9 @@ The helm chart version to use for the installation
 
 The values to pass to helm for the ArgoCD chart installation.
 
-##### Additional components: tailscale and haproxy operators
+##### Additional components: tailscale operator
 
-They both have the same three variables as above, however these variables have "tailscale" or "haproxy" instead of "argocd".
+This has the same variables as above, however the names replace "argocd" with "tailscale".
 
 #### HA Kubernetes cluster needs a cluster load balancer for the API
 
@@ -92,85 +92,23 @@ While the controlplane nodes will cluster, the other controlplane nodes and the 
 
 K3s has documentation about this [here.](https://docs.k3s.io/datastore/cluster-loadbalancer)
 
-There are a couple ways to do that, however since we're primarily focused on using tailscale, our solution focuses on using tailscale operator.
+There are a couple ways to do that, however since we're primarily focused on using tailscale, our solution focuses on using tailscale operator and tailnet exclusively. Tailscale - the service - remains as a SPOF, however for the project I'm accepting the risk of cloud-provider level outages (i.e. an AWS or Tailscale outage can prevent new machines from joining the mesh VPN; however machines already up and running generally continue to do so - just don't reboot them).
 
-Step 1: HAProxy loadbalancer
+Step 1: HA Solution
 
-Here's an example that will create a HAProxy loadbalancer with two replicas for your kubernetes API:
-```
----
-apiVersion: proxy.haproxy.com/v1alpha1
-kind: Instance
-metadata:
-  name: example
-  namespace: default
-spec:
-  replicas: 2
-  configuration:
-    defaults: {}
-    global: {}
-    selector:
-      matchLabels:
-        proxy.haproxy.com/instance: example
-  network:
-    service:
-      enabled: true
----
-apiVersion: config.haproxy.com/v1alpha1
-kind: Frontend
-metadata:
-  name: example
-  namespace: default
-  labels:
-    proxy.haproxy.com/instance: example
-spec:
-  mode: tcp
-  binds:
-    - name: hello-world
-      port: 6443
-  defaultBackend:
-    name: example-be
----
-apiVersion: config.haproxy.com/v1alpha1
-kind: Backend
-metadata:
-  name: example-be
-  namespace: default
-  labels:
-    proxy.haproxy.com/instance: example
-spec:
-  acl:
-    - criterion: src
-      name: whitelist
-      values:
-        - 100.64.0.0/10
-  mode: tcp
-  redispatch: true
-  balance:
-    algorithm: roundrobin
-  servers:
-    - address: wg-k8s-01
-      name: wg-k8s-01
-      port: 6443
-      check:
-        enabled: true
-    - address: wg-k8s-02
-      name: wg-k8s-02
-      port: 6443
-      check:
-        enabled: true
-    - address: wg-k8s-03
-      name: wg-k8s-03
-      port: 6443
-      check:
-        enabled: true
-```
+There are a lot of ways we can do this. However, there is a way we can do this without taking on any additional dependencies beyond tailscale: set up a [Service without a selector](https://kubernetes.io/docs/concepts/services-networking/service/#services-without-selectors) and creating a [custom EndPoint slice](https://kubernetes.io/docs/concepts/services-networking/service/#custom-endpointslices) ourselves.
 
-NOTE: This enables a simple TCP check, as recommended in the k3s documentation. In theory, it is possible to create a bearer token for authentication to the kubernetes cluster in order to actually access the healthcheck API for a deeper test. However, configuring this is considered beyond the scope of this document.
+This gives us a ClusterIP we can set up redundant subnet routers for over tailscale, rendering the cluster API endpoint free from SPOFs though in the event of a rolling reboot of all cluster nodes or similar there may be some minor disruption as tailscale switches from one subnet router to the next.
 
-In order to just expose this using tailscale operator (i.e. expose it as a machine with an open port), just add the appropriate annotation to the Instance (see below). Please note, there will only be a single instance connecting to the tailnet to provide this access, so it's still a SPOF. We recommend using redundant subnet routers instead.
+If you need to perform a rolling reboot of the cluster and must minimize downtime, it is recommended to wait until all N tailscale proxy pods are back online before rolling to the next. Minor disruption (on the order of a minute or less) has been observed during testing;  our goal is to avoid SPOFs that can render the cluster unusable/broken, and this scope is not intended to include zero-downtime deployments - for now.
 
-You can find examples of how to configure this in the examples/ subdirectory, haproxy.yaml shows how to set up the haproxy, and connector.yaml gives an example for tailscale.
+If this is a problem, then you need a more robust solution that allows for authenticated connection to the kubernetes API for purposes of hitting the healthcheck endpoint. There are a number of ways this can be accomplished, and generally this will require a full loadbalancer such as HAProxy, NginX, or similar and because there are limited ways to get this onto Tailscale and still allow mTLS auth, they are beyond the scope of this project.
+
+In order to just expose this ClusterIP using tailscale operator (i.e. expose it as a machine with an open port), just add the appropriate annotation to the Instance (see below). Please note, there will only be a single instance connecting to the tailnet to provide this access, so it's still a SPOF. We recommend using redundant subnet routers instead.
+
+You can find examples of how to configure this in the examples/ subdirectory.
+- connector.yaml gives an example of a tailscale connector pointed at a cluster IP.
+- service_lb.yaml shows how to set up a service without a selector and to create a custom EndpointSlice pointed at the tailscale IPs of the control nodes.
 
 You will need to approve the routes in the tailscale admin console, and you will need to configure the tls-san for the kubernetes cluster controlplane nodes, so you will need to set the following ansible variable for your control plane:
 
