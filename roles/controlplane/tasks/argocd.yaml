@@ -27,7 +27,7 @@
     group: root
     mode: '0600'
   vars:
-    namespace: argocd
+    k8s_namespace: argocd
 
 - name: Install ArgoCD with helm
   kubernetes.core.helm:

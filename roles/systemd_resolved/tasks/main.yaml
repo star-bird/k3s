@@ -2,7 +2,7 @@
 # vim: filetype=ansible.yaml
 - name: Ensure required packages are installed which require a reboot
   become: true
-  register: common_critical_packages
+  register: systemd_resolved_packages
   ansible.builtin.apt:
     pkg:
       - systemd-resolved
@@ -17,7 +17,7 @@
 
 - name: Remove dhclient's ability to overwrite systemd-resolved's /etc/resolv.conf
   become: true
-  register: common_critical_dhclient
+  register: systemd_resolved_dhclient
   ansible.builtin.copy:
     dest: /etc/dhcp/dhclient-enter-hooks.d/no-resolv-conf
     content: |
@@ -30,7 +30,7 @@
 # Resolved-networkd has no fallback dns by default, and dhclient isn't reliable about giving it the network DNS.
 - name: Create resolved config file (Fallback DNS)
   become: true
-  register: common_critical_config
+  register: systemd_resolved_config
   ansible.builtin.copy:
     src: resolved.conf
     dest: /etc/systemd/resolved.conf
@@ -41,7 +41,7 @@
 # Ansible version of ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
 - name: Ensure symlink for resolv.conf
   become: true
-  register: common_critical_symlink
+  register: systemd_resolved_symlink
   ansible.builtin.file:
     src: /run/systemd/resolve/resolv.conf
     dest: /etc/resolv.conf
@@ -55,7 +55,7 @@
 - name: Forced immediate reboot
   become: true
   throttle: 1
-  when: common_critical_packages.changed or common_critical_dhclient.changed or common_critical_symlink.changed or common_critical_config.changed
+  when: systemd_resolved_packages.changed or systemd_resolved_dhclient.changed or systemd_resolved_symlink.changed or systemd_resolved_config.changed
   ansible.builtin.reboot:
     reboot_timeout: 600
 

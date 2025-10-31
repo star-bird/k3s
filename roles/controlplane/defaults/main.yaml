@@ -1,6 +1,7 @@
 ---
 # vim: filetype=ansible.yaml
-k3s_tailscale_authkey: "{{ lookup('ansible.builtin.env', 'TS_KEY', default=Undefined) }}"
+# Collection level variable
+k3s_tailscale_authkey: "{{ lookup('ansible.builtin.env', 'TS_KEY', default=Undefined) }}" # noqa: var-naming[no-role-prefix]
 controlplane_cluster_cidr: 10.42.0.0/16
 controlplane_service_cidr: 10.43.0.0/16
 controlplane_extra_server_args: ""
@@ -8,9 +9,9 @@ controlplane_cluster_name: k8scluster
 controlplane_token_secret_name: wg-k8s-test
 
 controlplane_tailscale_enabled: false
-controlplane_tailscale_chart_version: "v1.88.3"
+controlplane_tailscale_chart_version: "v1.90.5"
 controlplane_tailscale_values: {}
 
 controlplane_argocd_enabled: false
-controlplane_argocd_chart_version: "8.5.8"
+controlplane_argocd_chart_version: "9.0.5"
 controlplane_argocd_values: {}

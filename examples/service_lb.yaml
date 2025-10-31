@@ -27,7 +27,11 @@ metadata:
   name: proxy-service
   namespace: test-nginx
   labels:
-    kubernetes.io/service-name: proxy-service # Must be present for EndpointSlice and equal to Service name for automatic mapping - with having it in place, you can change the name of EndpointSlice to something else. The official convention is using Service name as the prefix.
+    # Must be present for EndpointSlice and equal to Service name for automatic
+    # mapping - with having it in place, you can change the name of
+    # EndpointSlice to something else. The official convention is using Service
+    # name as the prefix.
+    kubernetes.io/service-name: proxy-service
 addressType: IPv4
 ports:
   - name: http
@@ -35,8 +39,8 @@ ports:
     port: 6443
 endpoints:
   - addresses:
-    - "100.87.28.111"
+      - "100.87.28.111"
   - addresses:
-    - "100.121.227.115"
+      - "100.121.227.115"
   - addresses:
-    - "100.83.153.44"
+      - "100.83.153.44"

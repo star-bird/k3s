@@ -27,7 +27,7 @@
     group: root
     mode: '0600'
   vars:
-    namespace: tailscale
+    k8s_namespace: tailscale
 
 - name: Install tailscale operator with helm
   kubernetes.core.helm:

@@ -1,4 +1,5 @@
 ---
-k3s_tailscale_authkey: "{{ lookup('ansible.builtin.env', 'TS_KEY', default=Undefined) }}"
+# Collection-level variable
+k3s_tailscale_authkey: "{{ lookup('ansible.builtin.env', 'TS_KEY', default=Undefined) }}" # noqa: var-naming[no-role-prefix]
 agent_extra_args: ""
 agent_token_secret_name: wg-k8s-test
