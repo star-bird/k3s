@@ -94,7 +94,7 @@ K3s has documentation about this [here.](https://docs.k3s.io/datastore/cluster-l
 
 There are a couple ways to do that, however since we're primarily focused on using tailscale, our solution focuses on using tailscale operator and tailnet exclusively. Tailscale - the service - remains as a SPOF, however for the project I'm accepting the risk of cloud-provider level outages (i.e. an AWS or Tailscale outage can prevent new machines from joining the mesh VPN; however machines already up and running generally continue to do so - just don't reboot them).
 
-Step 1: HA Solution
+Step 1: HA (high availability) Solution
 
 There are a lot of ways we can do this. However, there is a way we can do this without taking on any additional dependencies beyond tailscale: set up a [Service without a selector](https://kubernetes.io/docs/concepts/services-networking/service/#services-without-selectors) and creating a [custom EndPoint slice](https://kubernetes.io/docs/concepts/services-networking/service/#custom-endpointslices) ourselves.
 
