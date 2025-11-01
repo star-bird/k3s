@@ -92,7 +92,7 @@ While the controlplane nodes will cluster, the other controlplane nodes and the 
 
 K3s has documentation about this [here.](https://docs.k3s.io/datastore/cluster-loadbalancer)
 
-There are a couple ways to do that, however since we're primarily focused on using tailscale, our solution focuses on using tailscale operator and tailnet exclusively. Tailscale - the service - remains as a SPOF, however for the project I'm accepting the risk of cloud-provider level outages (i.e. an AWS or Tailscale outage can prevent new machines from joining the mesh VPN; however machines already up and running generally continue to do so - just don't reboot them).
+There are a couple ways to do that, however since we're primarily focused on using tailscale, our solution focuses on using tailscale operator and tailnet exclusively. Tailscale - the service - remains as a SPOF (single point of failure), however for the project I'm accepting the risk of cloud-provider level outages (i.e. an AWS or Tailscale outage can prevent new machines from joining the mesh VPN; however machines already up and running generally continue to do so - just don't reboot them).
 
 Step 1: HA (high availability) Solution
 
