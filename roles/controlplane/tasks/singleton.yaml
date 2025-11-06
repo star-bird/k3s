@@ -40,6 +40,7 @@
 - name: Store controlplane IP address
   ansible.builtin.set_fact:
     controlplane_ip: "{{ controlplane_api_ip | default(hostvars[inventory_hostname].ansible_tailscale0.ipv4.address) }}"
+    controlplane_port: "{{ controlplane_api_port | default('6443') }}"
   delegate_to: "{{ controlplane_item }}"
   delegate_facts: true
   loop: "{{ groups[controlplane_cluster_name] }}"
@@ -49,14 +50,9 @@
 - name: Run tailscale operator tasks
   ansible.builtin.import_tasks: tailscale_operator.yaml
   become: true
-  when: controlplane_tailscale_operator_enabled
+  when: controlplane_tailscale_enabled
 
 - name: Run ArgoCD tasks
   ansible.builtin.import_tasks: argocd.yaml
   become: true
   when: controlplane_argocd_enabled
-
-- name: Run HAProxy tasks
-  ansible.builtin.import_tasks: haproxy.yaml
-  become: true
-  when: controlplane_haproxy_enabled

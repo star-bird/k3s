@@ -4,6 +4,31 @@
   ansible.builtin.import_tasks: helm.yaml
   become: true
 
+- name: Create tailscale namespace
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: tailscale
+        labels:
+          name: tailscale
+          pod-security.kubernetes.io/audit: privileged
+          pod-security.kubernetes.io/enforce: privileged
+          pod-security.kubernetes.io/warn: privileged
+
+- name: Apply default Network Policies for tailscale namespace
+  ansible.builtin.template:
+    src: "netpols.yaml.j2"
+    dest: /var/lib/rancher/k3s/server/manifests/tailscale-netpols.yaml
+    owner: root
+    group: root
+    mode: '0600'
+  vars:
+    k8s_namespace: tailscale
+
 - name: Install tailscale operator with helm
   kubernetes.core.helm:
     name: tailscale-operator
@@ -11,7 +36,7 @@
     chart_repo_url: https://pkgs.tailscale.com/helmcharts
     chart_version: "{{ controlplane_tailscale_chart_version }}"
     namespace: tailscale
-    create_namespace: true
+    create_namespace: false
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     # use values from var or {}
     values: "{{ controlplane_tailscale_values }}"
