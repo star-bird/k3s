@@ -40,6 +40,7 @@
 - name: Store controlplane IP address
   ansible.builtin.set_fact:
     controlplane_ip: "{{ controlplane_api_ip | default(hostvars[inventory_hostname].ansible_tailscale0.ipv4.address) }}"
+    controlplane_port: "{{ controlplane_api_port | default('6443') }}"
   delegate_to: "{{ controlplane_item }}"
   delegate_facts: true
   loop: "{{ groups[controlplane_cluster_name] }}"

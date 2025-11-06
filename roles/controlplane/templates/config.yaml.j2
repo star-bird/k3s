@@ -1,5 +1,5 @@
 token: {{ lookup('community.general.bitwarden', controlplane_token_secret_name, field='password') }}
-server: https://{{ controlplane_ip }}:6443
+server: https://{{ controlplane_ip }}:{{ controlplane_port }}
 advertise-address: {{ controlplane_ip }}
 vpn-auth: name=tailscale,joinKey={{ k3s_tailscale_authkey | mandatory(msg='TS_KEY must be defined in the env.')}},extraArgs=--accept-routes
 cluster-cidr: {{ controlplane_cluster_cidr }}

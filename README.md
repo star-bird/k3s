@@ -46,7 +46,7 @@ Defaults to looking up TS_KEY environment variable. This should be a durable tai
 
 Applying a tag disables automatic required re-auth on the key. You can see tailscale docs on this [here](https://tailscale.com/kb/1028/key-expiry)
 
-##### controlplane-cluster_cidr
+##### controlplane_cluster_cidr
 
 If you are going to have multiple k3s clusters on the same tailnet, they need to have non-conflicting CIDRs so the routes don't conflict.
 
@@ -70,6 +70,14 @@ This should be the name of the group for all k3s servers, controlplane and agent
 
 The name of the bitwarden secret in the collection which contains the node token.
 
+##### controlplane_api_ip
+
+The IP address to connect to the controlplane on. By default, this will be the singleton host IP. Set this if you've done something special, for example taken additional steps to provide a LoadBalancer for the cluster control plane API.
+
+##### controlplane_api_port
+
+Similar to the above, it's the port for the controlplane connection. By default this is 6443; change it if needed (i.e. your LoadBalancer is translating ports)
+
 ##### controlplane_argocd_enabled
 
 Enables ArgoCD to be installed via helm after the first controlplane node is brought online.
@@ -86,7 +94,7 @@ The values to pass to helm for the ArgoCD chart installation.
 
 This has the same variables as above, however the names replace "argocd" with "tailscale".
 
-#### HA Kubernetes cluster needs a cluster load balancer for the API
+#### HA (High Availability) Kubernetes cluster needs a cluster load balancer for the API
 
 While the controlplane nodes will cluster, the other controlplane nodes and the agents will point to the IP of the first controlplane node as their initial point of contact. This represents a single point of failure.
 
@@ -96,33 +104,23 @@ There are a couple ways to do that, however since we're primarily focused on usi
 
 Step 1: HA (high availability) Solution
 
-There are a lot of ways we can do this. However, there is a way we can do this without taking on any additional dependencies beyond tailscale: set up a [Service without a selector](https://kubernetes.io/docs/concepts/services-networking/service/#services-without-selectors) and creating a [custom EndPoint slice](https://kubernetes.io/docs/concepts/services-networking/service/#custom-endpointslices) ourselves.
+If you dig around, kubernetes by default provides a service named "kubernetes" internally which is loadbalanced across all controlplane nodes and provides HA internally to the cluster.
 
-This gives us a ClusterIP we can set up redundant subnet routers for over tailscale, rendering the cluster API endpoint free from SPOFs though in the event of a rolling reboot of all cluster nodes or similar there may be some minor disruption as tailscale switches from one subnet router to the next.
-
-If you need to perform a rolling reboot of the cluster and must minimize downtime, it is recommended to wait until all N tailscale proxy pods are back online before rolling to the next. Minor disruption (on the order of a minute or less) has been observed during testing;  our goal is to avoid SPOFs that can render the cluster unusable/broken, and this scope is not intended to include zero-downtime deployments - for now.
-
-If this is a problem, then you need a more robust solution that allows for authenticated connection to the kubernetes API for purposes of hitting the healthcheck endpoint. There are a number of ways this can be accomplished, and generally this will require a full loadbalancer such as HAProxy, NginX, or similar and because there are limited ways to get this onto Tailscale and still allow mTLS auth, they are beyond the scope of this project.
-
-In order to just expose this ClusterIP using tailscale operator (i.e. expose it as a machine with an open port), just add the appropriate annotation to the Instance (see below). Please note, there will only be a single instance connecting to the tailnet to provide this access, so it's still a SPOF. We recommend using redundant subnet routers instead.
+We can just make this accessible on the tailnet via redundant subnet routers, and voila we have a HA loadbalanced k8s API accessible on the tailnet, which gives us everything we need.
 
 You can find examples of how to configure this in the examples/ subdirectory.
 - connector.yaml gives an example of a tailscale connector pointed at a cluster IP.
-- service_lb.yaml shows how to set up a service without a selector and to create a custom EndpointSlice pointed at the tailscale IPs of the control nodes.
 
-You will need to approve the routes in the tailscale admin console, and you will need to configure the tls-san for the kubernetes cluster controlplane nodes, so you will need to set the following ansible variable for your control plane:
-
-```
-controlplane_extra_server_args: "--tls-san 10.45.78.177"
-```
-
-Once that is done, you will need to update the configurations to point at the ClusterIP instead of the default tailscale IP of the first controlplane node, and run the playbook a third time:
+You will need to update the configurations to point at the ClusterIP instead of the default tailscale IP of the first controlplane node, and run the playbook again:
 
 ```
-controlplane_api_ip: 10.45.78.177
+controlplane_api_ip: 10.45.0.1
+controlplane_api_port: 443
 ```
 
-Note: You cannot know the ClusterIP ahead of time. You will need to stand the cluster up, then create the custom resources, then modify controlplane_extra_server_args and then continue. Alternatively, you could set up a custom domain name on your network, stand up the cluster with tls-san set, and assign the IP address to the A record after the ClusterIP is known.
+You will need to update your kubeconfig to point to https://10.45.0.1:443/
+
+Note: Because this service is available by default the ClusterIP is already included in the TLS SAN. You will not need to add it via controlplane_extra_server_args.
 
 
 ### agent

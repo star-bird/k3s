@@ -27,6 +27,5 @@ spec:
   hostnamePrefix: ts-kubeapi
   subnetRouter:
     advertiseRoutes:
-      - "10.45.8.26/32"
-      - "10.45.33.161/32"
+      - "10.45.0.1/32"
   proxyClass: kubeapi-proxyclass

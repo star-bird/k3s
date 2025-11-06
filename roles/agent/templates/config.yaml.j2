@@ -1,5 +1,5 @@
 token: {{ lookup('community.general.bitwarden', agent_token_secret_name, field='password') }}
-server: https://{{ controlplane_ip }}:6443
+server: https://{{ controlplane_ip }}:{{ controlplane_port }}
 vpn-auth: name=tailscale,joinKey={{ k3s_tailscale_authkey | mandatory(msg='TS_KEY must be defined in the env.')}},extraArgs=--accept-routes
 kubelet-arg:
   - 'pod-max-pids=2097152'
