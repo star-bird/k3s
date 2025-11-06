@@ -37,4 +37,3 @@
 
 - name: Run cluster tasks
   ansible.builtin.import_tasks: cluster.yaml
-  when: inventory_hostname != groups[hostvars[inventory_hostname].group_names[0]][0]
