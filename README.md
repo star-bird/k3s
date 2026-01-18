@@ -4,6 +4,9 @@
 
 This collection is designed to create a k3s cluster, containing one-or-more controlplane nodes and zero-or-more agent nodes. The controlplane mesh runs over tailscale, and theoretically this secures the API endpoints.
 
+> [!WARNING] 
+> k3s now includes this notice, which we had discovered the hard way: "Embedded etcd is not supported in this type of deployment. If using embedded etcd, all server nodes must be reachable to each other via their private IPs. Agents may be distributed over multiple networks, but all servers should be in the same location."
+
 ## Roles
 
 The following roles exist. If you wish to use a given role, they should be specified in the order provided below.
