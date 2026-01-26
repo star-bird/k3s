@@ -40,6 +40,16 @@
     mode: '0755'
   when: ansible_facts.architecture == "x86_64"
 
+- name: Download k3s binary aarch64
+  ansible.builtin.get_url:
+    url: https://github.com/k3s-io/k3s/releases/download/{{ prereq_k3s_version }}/k3s-arm64
+    checksum: sha256:https://github.com/k3s-io/k3s/releases/download/{{ prereq_k3s_version }}/sha256sum-arm64.txt
+    dest: /usr/local/bin/k3s
+    owner: root
+    group: root
+    mode: '0755'
+  when: ansible_facts.architecture == "aarch64"
+
 - name: Create kubectl symlink
   ansible.builtin.file:
     src: /usr/local/bin/k3s
@@ -104,21 +114,33 @@
     group: root
     mode: '0644'
 
-- name: Install Tailscale gpg key for Trixie
-  ansible.builtin.copy:
-    src: trixie.noarmor.gpg
-    dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
-    owner: root
-    group: root
-    mode: '0644'
+- name: Ensure python3-debian is installed so we can modify/add deb822 repos
+  ansible.builtin.apt:
+    update_cache: true
+    autoclean: true
+    pkg:
+      - python3-debian
+    state: latest
 
-- name: Install Tailscale sources.list for Trixie
-  ansible.builtin.copy:
-    src: tailscale.trixie.sources.list
-    dest: /etc/apt/sources.list.d/tailscale.list
-    owner: root
-    group: root
-    mode: '0644'
+- name: Add tailscale apt repository for amd64
+  ansible.builtin.deb822_repository:
+    name: tailscale-stable-debian
+    uris: https://pkgs.tailscale.com/stable/debian/
+    suites: trixie
+    components: [main]
+    architectures: [amd64]
+    signed_by: https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg
+  when: ansible_facts.architecture == "x86_64"
+
+- name: Add tailscale apt repository for amd64
+  ansible.builtin.deb822_repository:
+    name: tailscale-stable-debian
+    uris: https://pkgs.tailscale.com/stable/debian/
+    suites: trixie
+    components: [main]
+    architectures: [arm64]
+    signed_by: https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg
+  when: ansible_facts.architecture == "aarch64"
 
 - name: Install required packages
   ansible.builtin.apt:
