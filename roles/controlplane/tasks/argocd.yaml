@@ -22,7 +22,7 @@
 - name: Apply default Network Policies for argocd namespace
   ansible.builtin.template:
     src: "netpols.yaml.j2"
-    dest: /var/lib/rancher/k3s/server/manifests/agrocd-netpols.yaml
+    dest: /var/lib/rancher/k3s/server/manifests/argocd-netpols.yaml
     owner: root
     group: root
     mode: '0600'
