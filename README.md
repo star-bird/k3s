@@ -69,6 +69,8 @@ If you wish to pass additional args to k3s binary when the service is bing start
 
 This should be the name of the group for all k3s servers, controlplane and agent. We use this to make the controlplane ip accessible to all hosts (including agent hosts which do not run the controlplane tasks.)
 
+Defaults to "k8scluster"
+
 ##### controlplane_token_secret_name
 
 The name of the bitwarden secret in the collection which contains the node token.
