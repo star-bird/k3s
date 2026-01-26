@@ -1,6 +1,6 @@
 ---
 # vim: filetype=ansible.yaml
-- name: Add Helm apt repository
+- name: Add Helm apt repository for amd64
   ansible.builtin.deb822_repository:
     name: helm-stable-debian
     uris: https://packages.buildkite.com/helm-linux/helm-debian/any/
@@ -8,6 +8,17 @@
     components: [main]
     architectures: [amd64]
     signed_by: https://packages.buildkite.com/helm-linux/helm-debian/gpgkey
+  when: ansible_facts.architecture == "x86_64"
+
+- name: Add Helm apt repository for aarch64
+  ansible.builtin.deb822_repository:
+    name: helm-stable-debian
+    uris: https://packages.buildkite.com/helm-linux/helm-debian/any/
+    suites: any
+    components: [main]
+    architectures: [arm64]
+    signed_by: https://packages.buildkite.com/helm-linux/helm-debian/gpgkey
+  when: ansible_facts.architecture == "aarch64"
 
 - name: Install required packages
   ansible.builtin.apt:
