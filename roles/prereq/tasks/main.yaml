@@ -114,33 +114,21 @@
     group: root
     mode: '0644'
 
-- name: Ensure python3-debian is installed so we can modify/add deb822 repos
-  ansible.builtin.apt:
-    update_cache: true
-    autoclean: true
-    pkg:
-      - python3-debian
-    state: latest
+- name: Install Tailscale gpg key for Trixie
+  ansible.builtin.copy:
+    src: trixie.noarmor.gpg
+    dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+    owner: root
+    group: root
+    mode: '0644'
 
-- name: Add tailscale apt repository for amd64
-  ansible.builtin.deb822_repository:
-    name: tailscale-stable-debian
-    uris: https://pkgs.tailscale.com/stable/debian/
-    suites: trixie
-    components: [main]
-    architectures: [amd64]
-    signed_by: https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg
-  when: ansible_facts.architecture == "x86_64"
-
-- name: Add tailscale apt repository for amd64
-  ansible.builtin.deb822_repository:
-    name: tailscale-stable-debian
-    uris: https://pkgs.tailscale.com/stable/debian/
-    suites: trixie
-    components: [main]
-    architectures: [arm64]
-    signed_by: https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg
-  when: ansible_facts.architecture == "aarch64"
+- name: install tailscale sources.list for trixie
+  ansible.builtin.copy:
+    src: tailscale.trixie.sources.list
+    dest: /etc/apt/sources.list.d/tailscale.list
+    owner: root
+    group: root
+    mode: '0644'
 
 - name: Install required packages
   ansible.builtin.apt:
@@ -149,6 +137,7 @@
     pkg:
       - tailscale
       - python3-kubernetes
+      - python3-debian
     state: latest
 
 - name: CIS hardening - disable panic_on_oom
