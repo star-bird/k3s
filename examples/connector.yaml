@@ -8,6 +8,16 @@ spec:
     acceptRoutes: true
   statefulSet:
     pod:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: tailscale.com/parent-resource
+                operator: In
+                values:
+                - prod-ts-kubeapi
+            topologyKey: kubernetes.io/hostname
       nodeSelector:
         node-role.kubernetes.io/control-plane: "true"
       tailscaleContainer:
