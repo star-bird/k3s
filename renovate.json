@@ -2,5 +2,18 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "k3s-io/k3s",
+      "managerFilePatterns": [
+        "/roles/prereq/defaults/main.yaml"
+      ],
+      "matchStrings": [
+        "prereq_k3s_version: (?<currentValue>.*?)\n"
+      ]
+    },
   ]
 }
