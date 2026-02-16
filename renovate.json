@@ -12,7 +12,7 @@
         "/roles/prereq/defaults/main.yaml"
       ],
       "matchStrings": [
-        "prereq_k3s_version: (?<currentValue>.*?)\n"
+        "prereq_k3s_version: (?<currentValue>.*)"
       ]
     },
   ]
