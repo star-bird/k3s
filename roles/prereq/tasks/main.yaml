@@ -40,6 +40,16 @@
     mode: '0755'
   when: ansible_facts.architecture == "x86_64"
 
+- name: Download k3s binary aarch64
+  ansible.builtin.get_url:
+    url: https://github.com/k3s-io/k3s/releases/download/{{ prereq_k3s_version }}/k3s-arm64
+    checksum: sha256:https://github.com/k3s-io/k3s/releases/download/{{ prereq_k3s_version }}/sha256sum-arm64.txt
+    dest: /usr/local/bin/k3s
+    owner: root
+    group: root
+    mode: '0755'
+  when: ansible_facts.architecture == "aarch64"
+
 - name: Create kubectl symlink
   ansible.builtin.file:
     src: /usr/local/bin/k3s
@@ -112,7 +122,7 @@
     group: root
     mode: '0644'
 
-- name: Install Tailscale sources.list for Trixie
+- name: install tailscale sources.list for trixie
   ansible.builtin.copy:
     src: tailscale.trixie.sources.list
     dest: /etc/apt/sources.list.d/tailscale.list
@@ -127,6 +137,7 @@
     pkg:
       - tailscale
       - python3-kubernetes
+      - python3-debian
     state: latest
 
 - name: CIS hardening - disable panic_on_oom
