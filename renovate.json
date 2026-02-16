@@ -15,5 +15,31 @@
         "prereq_k3s_version: (?<currentValue>.*)"
       ]
     },
+    {
+      "customType": "regex",
+      "description": "Update tailscale version",
+      "managerFilePatterns": [
+        "/roles/controlplane/defaults/main.yaml/"
+      ],
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://pkgs.tailscale.com/helmcharts",
+      "depNameTemplate": "tailscale-operator",
+      "matchStrings": [
+        "controlplane_tailscale_chart_version: \"(?<currentValue>.+)\""
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Update argocd version",
+      "managerFilePatterns": [
+        "/roles/controlplane/defaults/main.yaml/"
+      ],
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://argoproj.github.io/argo-helm",
+      "depNameTemplate": "argo-cd",
+      "matchStrings": [
+        "controlplane_argocd_chart_version: \"(?<currentValue>.+)\""
+      ]
+    },
   ]
 }
