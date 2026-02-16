@@ -9,7 +9,7 @@ controlplane_cluster_name: k8scluster
 controlplane_token_secret_name: wg-k8s-test
 
 controlplane_tailscale_enabled: false
-controlplane_tailscale_chart_version: "v1.92.5"
+controlplane_tailscale_chart_version: "1.94.2"
 controlplane_tailscale_values: {}
 
 controlplane_argocd_enabled: false
