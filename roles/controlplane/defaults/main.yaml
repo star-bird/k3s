@@ -13,5 +13,5 @@ controlplane_tailscale_chart_version: "1.94.2"
 controlplane_tailscale_values: {}
 
 controlplane_argocd_enabled: false
-controlplane_argocd_chart_version: "9.4.4"
+controlplane_argocd_chart_version: "9.4.5"
 controlplane_argocd_values: {}
